@@ -34,8 +34,6 @@ from tqdm import tqdm
 
 import config
 
-os.environ["HF_TOKEN"] = "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"
-
 # ---------------------------------------------------------------------------
 # Config — matches competition data
 # ---------------------------------------------------------------------------
