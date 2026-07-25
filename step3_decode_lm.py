@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 import config
 from step3_train_kenlm import load_audio_for_model
-from utils import compute_metrics, normalize_text
+from utils import compute_metrics, resolve_audio_path, normalize_text
 
 
 def load_model_and_processor(model_dir: str):

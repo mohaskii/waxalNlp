@@ -28,6 +28,7 @@ from utils import (
     DataCollatorCTCWithPadding,
     compute_metrics,
     load_audio,
+    resolve_audio_path,
     print_gpu_info,
 )
 
@@ -52,7 +53,9 @@ def prepare_dataset_for_fold(
         records = []
         for _, row in df.iterrows():
             audio_path = os.path.join(config.TRAIN_AUDIO_DIR, str(row["Audio_ID"]))
-            if not os.path.exists(audio_path):
+            try:
+                audio_path = resolve_audio_path(audio_path)
+            except FileNotFoundError:
                 print(f"WARNING: {audio_path} not found, skipping")
                 continue
             records.append({

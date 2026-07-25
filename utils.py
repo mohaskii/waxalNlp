@@ -62,9 +62,21 @@ def build_vocab(transcripts: list[str]) -> dict[str, int]:
 # ---------------------------------------------------------------------------
 # Audio Loading
 # ---------------------------------------------------------------------------
+def resolve_audio_path(path: str) -> str:
+    """Try path as-is, then .flac, then .wav."""
+    if os.path.exists(path):
+        return path
+    for ext in (".flac", ".wav"):
+        candidate = path + ext
+        if os.path.exists(candidate):
+            return candidate
+    raise FileNotFoundError(f"Audio not found: {path}")
+
+
 def load_audio(path: str, target_sr: int = config.SAMPLING_RATE) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
     """Load an audio file and resample to target_sr. Returns float32 numpy array."""
-    audio, _ = librosa.load(path, sr=target_sr, mono=True)
+    resolved = resolve_audio_path(path)
+    audio, _ = librosa.load(resolved, sr=target_sr, mono=True)
     # Clip to MAX_AUDIO_LENGTH
     max_samples = int(config.MAX_AUDIO_LENGTH * target_sr)
     if len(audio) > max_samples:

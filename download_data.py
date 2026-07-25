@@ -82,7 +82,7 @@ def _authenticate() -> str | None:
 # ---------------------------------------------------------------------------
 # CSV Parsing
 # ---------------------------------------------------------------------------
-def _read_competition_ids(data_dir: str) -> tuple[dict[str, set[str]], set[str]]:
+def _read_competition_ids(csv_dir: str) -> tuple[dict[str, set[str]], set[str]]:
     """
     Read Train.csv and Test.csv.
 
@@ -93,6 +93,9 @@ def _read_competition_ids(data_dir: str) -> tuple[dict[str, set[str]], set[str]]
     split each sample lives in — this lets us skip irrelevant splits
     during download instead of scanning the full HF dataset.
 
+    Args:
+        csv_dir: Directory containing Train.csv and Test.csv
+
     Returns:
         split_map:  {hf_split: set_of_ids}  — which IDs belong to which HF split
         all_ids:    set of ALL required IDs for O(1) lookup during streaming
@@ -101,7 +104,7 @@ def _read_competition_ids(data_dir: str) -> tuple[dict[str, set[str]], set[str]]
     all_ids: set[str] = set()
 
     # --- Train.csv (has original_split column) ---
-    train_path = os.path.join(data_dir, "Train.csv")
+    train_path = os.path.join(csv_dir, "Train.csv")
     train_count = 0
     if os.path.exists(train_path):
         with open(train_path, "r") as f:
@@ -117,7 +120,7 @@ def _read_competition_ids(data_dir: str) -> tuple[dict[str, set[str]], set[str]]
         print(f"WARNING: {train_path} not found — no training IDs loaded.")
 
     # --- Test.csv (no original_split → all go to HF 'test') ---
-    test_path = os.path.join(data_dir, "Test.csv")
+    test_path = os.path.join(csv_dir, "Test.csv")
     test_count = 0
     if os.path.exists(test_path):
         with open(test_path, "r") as f:
@@ -212,9 +215,14 @@ def probe():
 # ---------------------------------------------------------------------------
 # Download (optimized)
 # ---------------------------------------------------------------------------
-def download(target_dir: str = "./data", lang: str | None = None):
+def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: str | None = None):
     """
     Main download routine — optimized v2.
+
+    Args:
+        audio_dir: Where to save audio files (e.g. /tmp/data on Kaggle)
+        csv_dir:   Where to find Train.csv / Test.csv (e.g. ./data)
+        lang:      Optional single language to download
 
     Strategy:
     1. Parse CSVs once → split_map {hf_split: set_of_ids} + flat all_ids set
@@ -232,7 +240,7 @@ def download(target_dir: str = "./data", lang: str | None = None):
     token = _authenticate()
 
     # 1. Parse CSVs → split_map tells us which HF splits have required IDs
-    split_map, all_ids = _read_competition_ids(target_dir)
+    split_map, all_ids = _read_competition_ids(csv_dir)
     if not all_ids:
         print("ERROR: No IDs found in Train.csv / Test.csv.")
         print(f"Make sure both CSVs exist in: {target_dir}/")
@@ -267,7 +275,7 @@ def download(target_dir: str = "./data", lang: str | None = None):
             if not relevant_ids:
                 continue
 
-            output_dir = os.path.join(target_dir, output_subdir)
+            output_dir = os.path.join(audio_dir, output_subdir)
             os.makedirs(output_dir, exist_ok=True)
 
             print(
@@ -356,9 +364,14 @@ def main():
         help="Download audio files matching Train.csv / Test.csv IDs",
     )
     parser.add_argument(
-        "--data-dir",
+        "--audio-dir",
         default=config.DATA_DIR,
-        help=f"Directory containing Train.csv / Test.csv (default: {config.DATA_DIR})",
+        help=f"Where to save downloaded audio (default: {config.DATA_DIR})",
+    )
+    parser.add_argument(
+        "--csv-dir",
+        default="./data",
+        help=f"Directory containing Train.csv / Test.csv (default: ./data)",
     )
     parser.add_argument(
         "--lang",
@@ -378,7 +391,7 @@ def main():
         probe()
 
     if args.download:
-        download(target_dir=args.data_dir, lang=args.lang)
+        download(audio_dir=args.audio_dir, csv_dir=args.csv_dir, lang=args.lang)
 
 
 if __name__ == "__main__":

@@ -5,16 +5,19 @@ All paths, hyperparameters, and model settings live here.
 
 import os
 from dataclasses import dataclass, field
+os.environ["HF_TOKEN"] = "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"
 
-# ---------------------------------------------------------------------------
-# Data Paths (adjust to your Kaggle / local environment)
-# ---------------------------------------------------------------------------
-DATA_DIR = os.environ.get("WAXAL_DATA_DIR", "./data")
-TRAIN_CSV = os.path.join(DATA_DIR, "Train.csv")
-TEST_CSV = os.path.join(DATA_DIR, "Test.csv")
+# Detect Kaggle — /tmp doesn't count toward 20 GB output limit
+_IS_KAGGLE = "KAGGLE_DATA_PROXY_TOKEN" in os.environ
+_DEFAULT_DATA = "/tmp/data" if _IS_KAGGLE else "./data"
+DATA_DIR = os.environ.get("WAXAL_DATA_DIR", _DEFAULT_DATA)
+
+# CSVs are tiny — always in working dir so they persist across sessions
+TRAIN_CSV = "./data/Train.csv"
+TEST_CSV = "./data/Test.csv"
 TRAIN_AUDIO_DIR = os.path.join(DATA_DIR, "Train")
 TEST_AUDIO_DIR = os.path.join(DATA_DIR, "Test")
-SAMPLE_SUBMISSION = os.path.join(DATA_DIR, "SampleSubmission.csv")
+SAMPLE_SUBMISSION = "./data/SampleSubmission.csv"
 
 # ---------------------------------------------------------------------------
 # Output directories
