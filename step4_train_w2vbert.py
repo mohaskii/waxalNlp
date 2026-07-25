@@ -237,6 +237,11 @@ def train_single_fold(fold: int, train_df: pd.DataFrame, cfg: config.W2VBertConf
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fold", type=int, default=None,
+                        help="Train only this fold (0-4). Default: all 5 folds.")
+    args = parser.parse_args()
+
     print_gpu_info()
 
     train_df = pd.read_csv(os.path.join(config.OUTPUT_DIR, "train_folds.csv"))
@@ -244,11 +249,10 @@ def main():
 
     print(f"Model:      {cfg.model_name}")
     print(f"LoRA r:     {cfg.lora_r}, alpha: {cfg.lora_alpha}")
-    print(
-        f"Batch size: {cfg.per_device_train_batch_size} x {cfg.gradient_accumulation_steps} accum"
-    )
+    print(f"Batch size: {cfg.per_device_train_batch_size} x {cfg.gradient_accumulation_steps} accum")
 
-    for fold in range(config.N_FOLDS):
+    folds = [args.fold] if args.fold is not None else range(config.N_FOLDS)
+    for fold in folds:
         train_single_fold(fold, train_df, cfg)
 
     print("\nAll folds trained! Checkpoints in:", config.CHECKPOINT_DIR)
