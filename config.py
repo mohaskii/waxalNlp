@@ -34,7 +34,7 @@ os.makedirs(SUBMISSION_DIR, exist_ok=True)
 # ---------------------------------------------------------------------------
 # Hugging Face Hub
 # ---------------------------------------------------------------------------
-HF_USERNAME = os.environ.get("HF_USERNAME", "your_username")
+HF_USERNAME = os.environ.get("HF_USERNAME", "loloSkiii")
 HF_TOKEN = os.environ.get("HF_TOKEN", None)
 
 # WAXAL dataset on Hugging Face (for selective audio download)
