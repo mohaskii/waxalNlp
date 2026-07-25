@@ -1,0 +1,30 @@
+# --- Core Deep Learning & PyTorch ---
+torch
+torchaudio
+
+# --- Hugging Face Ecosystem ---
+transformers>=4.38.0
+datasets>=2.16.0
+accelerate>=0.26.0
+peft>=0.8.0
+evaluate>=0.4.0
+bitsandbytes>=0.42.0
+
+# --- Audio Processing & Augmentation ---
+librosa
+soundfile
+audiomentations
+
+# --- ASR & CTC Language Model Decoding ---
+pyctcdecode
+kenlm
+
+# --- Evaluation Metrics (WER & CER) ---
+jiwer>=3.0.0
+
+# --- General Machine Learning & Utilities ---
+numpy
+pandas
+scikit-learn
+tqdm
+huggingface_hub
