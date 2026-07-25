@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 import config
 from step3_train_kenlm import load_audio_for_model
-from utils import compute_metrics, resolve_audio_path, normalize_text
+from utils import compute_metrics, normalize_text
 
 
 def load_model_and_processor(model_dir: str):
@@ -37,7 +37,9 @@ def load_model_and_processor(model_dir: str):
             torch_dtype=torch.float16,
         )
         model = PeftModel.from_pretrained(model, adapter_path)
-        processor = AutoProcessor.from_pretrained(base_model_name, trust_remote_code=True)
+        processor = AutoProcessor.from_pretrained(
+            base_model_name, trust_remote_code=True
+        )
     else:
         model = AutoModelForCTC.from_pretrained(
             model_dir,
@@ -52,7 +54,9 @@ def load_model_and_processor(model_dir: str):
     return model, processor
 
 
-def build_beam_decoder(vocab_path: str, kenlm_path: str, alpha: float = 1.5, beta: float = 1.0):
+def build_beam_decoder(
+    vocab_path: str, kenlm_path: str, alpha: float = 1.5, beta: float = 1.0
+):
     """Build a pyctcdecode CTC beam search decoder."""
     with open(vocab_path, "r", encoding="utf-8") as f:
         vocabs = json.load(f)
@@ -126,7 +130,9 @@ def tune_on_validation_fold(
     best_combined = float("inf")
     best_params = (1.0, 1.0)
 
-    print(f"\nGrid search over alpha {beam_cfg.alpha_range}, beta {beam_cfg.beta_range}")
+    print(
+        f"\nGrid search over alpha {beam_cfg.alpha_range}, beta {beam_cfg.beta_range}"
+    )
 
     for alpha, beta in itertools.product(beam_cfg.alpha_range, beam_cfg.beta_range):
         decoder = build_ctcdecoder(
@@ -141,13 +147,17 @@ def tune_on_validation_fold(
             audio_path = os.path.join(config.TRAIN_AUDIO_DIR, str(row["Audio_ID"]))
             inputs = load_audio_for_model(audio_path, processor)
             with torch.no_grad():
-                logits = model(inputs["input_values"].to(device)).logits[0].cpu().numpy()
+                logits = (
+                    model(inputs["input_values"].to(device)).logits[0].cpu().numpy()
+                )
             predictions.append(normalize_text(decoder.decode(logits)))
 
         metrics = compute_metrics(predictions, references)
-        print(f"  α={alpha:.1f} β={beta:.1f}  "
-              f"WER={metrics['wer']:.4f} CER={metrics['cer']:.4f} "
-              f"C={metrics['combined']:.4f}")
+        print(
+            f"  α={alpha:.1f} β={beta:.1f}  "
+            f"WER={metrics['wer']:.4f} CER={metrics['cer']:.4f} "
+            f"C={metrics['combined']:.4f}"
+        )
 
         if metrics["combined"] < best_combined:
             best_combined = metrics["combined"]
@@ -161,23 +171,39 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="CTC Beam Search Decoding with KenLM")
-    parser.add_argument("--model_dir", type=str, required=True,
-                        help="Path to fine-tuned model checkpoint")
-    parser.add_argument("--kenlm_path", type=str,
-                        default=os.path.join(config.KENLM_DIR, "lm_5gram.binary"),
-                        help="Path to KenLM binary model")
-    parser.add_argument("--vocab_path", type=str,
-                        default=os.path.join(config.OUTPUT_DIR, "vocabs.json"))
+    parser.add_argument(
+        "--model_dir",
+        type=str,
+        required=True,
+        help="Path to fine-tuned model checkpoint",
+    )
+    parser.add_argument(
+        "--kenlm_path",
+        type=str,
+        default=os.path.join(config.KENLM_DIR, "lm_5gram.binary"),
+        help="Path to KenLM binary model",
+    )
+    parser.add_argument(
+        "--vocab_path", type=str, default=os.path.join(config.OUTPUT_DIR, "vocabs.json")
+    )
     parser.add_argument("--alpha", type=float, default=1.5)
     parser.add_argument("--beta", type=float, default=1.0)
     parser.add_argument("--beam_width", type=int, default=100)
-    parser.add_argument("--mode", type=str, default="predict",
-                        choices=["predict", "tune"],
-                        help="predict = decode test set; tune = grid search α/β on val fold")
-    parser.add_argument("--fold", type=int, default=0,
-                        help="Validation fold to use for tuning")
-    parser.add_argument("--output_csv", type=str,
-                        default=os.path.join(config.SUBMISSION_DIR, "mms_beam.csv"))
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="predict",
+        choices=["predict", "tune"],
+        help="predict = decode test set; tune = grid search α/β on val fold",
+    )
+    parser.add_argument(
+        "--fold", type=int, default=0, help="Validation fold to use for tuning"
+    )
+    parser.add_argument(
+        "--output_csv",
+        type=str,
+        default=os.path.join(config.SUBMISSION_DIR, "mms_beam.csv"),
+    )
 
     args = parser.parse_args()
 
@@ -192,14 +218,20 @@ def main():
     if args.mode == "predict":
         # Decode test set
         test_df = pd.read_csv(os.path.join(config.OUTPUT_DIR, "test_normalized.csv"))
-        decoder = build_beam_decoder(args.vocab_path, args.kenlm_path, args.alpha, args.beta)
-        predictions = decode_dataset(model, processor, decoder, test_df, config.TEST_AUDIO_DIR)
+        decoder = build_beam_decoder(
+            args.vocab_path, args.kenlm_path, args.alpha, args.beta
+        )
+        predictions = decode_dataset(
+            model, processor, decoder, test_df, config.TEST_AUDIO_DIR
+        )
 
         # Create submission
-        submission = pd.DataFrame({
-            "Audio_ID": test_df["Audio_ID"],
-            "Predicted_Transcript": predictions,
-        })
+        submission = pd.DataFrame(
+            {
+                "Audio_ID": test_df["Audio_ID"],
+                "Predicted_Transcript": predictions,
+            }
+        )
         submission.to_csv(args.output_csv, index=False)
         print(f"Submission saved to {args.output_csv}")
 

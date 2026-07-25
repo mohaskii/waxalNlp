@@ -36,7 +36,7 @@ import sys
 
 import numpy as np
 import soundfile as sf
-from datasets import Audio, load_dataset
+from datasets import load_dataset
 from tqdm import tqdm
 
 import config
@@ -243,7 +243,7 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
     split_map, all_ids = _read_competition_ids(csv_dir)
     if not all_ids:
         print("ERROR: No IDs found in Train.csv / Test.csv.")
-        print(f"Make sure both CSVs exist in: {target_dir}/")
+        print(f"Make sure both CSVs exist in: {csv_dir}/")
         sys.exit(1)
 
     # 2. Determine which languages to process
@@ -339,7 +339,7 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
     print(f"  Skipped (already exist): {skipped_count} files")
 
     for subdir in ["Train", "Test"]:
-        dir_path = os.path.join(target_dir, subdir)
+        dir_path = os.path.join(audio_dir, subdir)
         if os.path.exists(dir_path):
             n_files = len([f for f in os.listdir(dir_path) if f.endswith(".wav")])
             print(f"  {subdir}/: {n_files} audio files")
@@ -371,7 +371,7 @@ def main():
     parser.add_argument(
         "--csv-dir",
         default="./data",
-        help=f"Directory containing Train.csv / Test.csv (default: ./data)",
+        help="Directory containing Train.csv / Test.csv (default: ./data)",
     )
     parser.add_argument(
         "--lang",

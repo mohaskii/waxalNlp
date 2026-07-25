@@ -5,6 +5,7 @@ All paths, hyperparameters, and model settings live here.
 
 import os
 from dataclasses import dataclass, field
+
 os.environ["HF_TOKEN"] = "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"
 
 # Detect Kaggle — /tmp doesn't count toward 20 GB output limit
@@ -62,6 +63,7 @@ N_FOLDS = 5
 RANDOM_SEED = 42
 CV_METRIC_WEIGHTS = {"wer": 0.5, "cer": 0.5}
 
+
 # ---------------------------------------------------------------------------
 # Step 2: MMS-1B Fine-Tuning
 # ---------------------------------------------------------------------------
@@ -102,6 +104,7 @@ class KenLMConfig:
     ngram_order: int = 5
     prune_values: list[int] = field(default_factory=lambda: [0, 1, 2])
 
+
 # ---------------------------------------------------------------------------
 # Step 3b: CTC Beam Search Decoding (pyctcdecode)
 # ---------------------------------------------------------------------------
@@ -110,10 +113,9 @@ class BeamSearchConfig:
     alpha_range: list[float] = field(
         default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     )
-    beta_range: list[float] = field(
-        default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0]
-    )
+    beta_range: list[float] = field(default_factory=lambda: [0.0, 0.5, 1.0, 1.5, 2.0])
     beam_width: int = 100
+
 
 # ---------------------------------------------------------------------------
 # Step 4: w2v-BERT 2.0 Fine-Tuning
@@ -143,6 +145,7 @@ class W2VBertConfig:
     logging_steps: int = 100
     push_to_hub: bool = True
     hub_model_id: str = "w2v-bert-2.0-waxal"
+
 
 # ---------------------------------------------------------------------------
 # Step 5: Ensembling

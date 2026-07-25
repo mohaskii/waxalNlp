@@ -39,7 +39,7 @@ from tqdm import tqdm
 import config
 from step3_decode_lm import load_model_and_processor
 from step3_train_kenlm import load_audio_for_model
-from utils import normalize_text, resolve_audio_path
+from utils import normalize_text
 
 
 # ---------------------------------------------------------------------------

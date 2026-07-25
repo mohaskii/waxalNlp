@@ -5,6 +5,7 @@ vocabulary building, and metric computation.
 
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 
@@ -25,7 +26,7 @@ def normalize_text(text: str) -> str:
     This is critical for CER performance on accented characters in
     Lingala, Shona, and Luganda.
     """
-        # Unicode NFC normalization — handles composed accented characters
+    # Unicode NFC normalization — handles composed accented characters
     text = unicodedata.normalize("NFC", text).strip()
     # Lowercase
     text = text.lower()
@@ -73,7 +74,9 @@ def resolve_audio_path(path: str) -> str:
     raise FileNotFoundError(f"Audio not found: {path}")
 
 
-def load_audio(path: str, target_sr: int = config.SAMPLING_RATE) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
+def load_audio(
+    path: str, target_sr: int = config.SAMPLING_RATE
+) -> np.ndarray[tuple[int], np.dtype[np.float32]]:
     """Load an audio file and resample to target_sr. Returns float32 numpy array."""
     resolved = resolve_audio_path(path)
     audio, _ = librosa.load(resolved, sr=target_sr, mono=True)
@@ -125,9 +128,7 @@ class DataCollatorCTCWithPadding:
 
     def __call__(self, features: list[dict[str, object]]) -> dict[str, torch.Tensor]:
         # Separate inputs and labels
-        input_features = [
-            {"input_values": f["input_values"]} for f in features
-        ]
+        input_features = [{"input_values": f["input_values"]} for f in features]
         label_features = [{"input_ids": f["labels"]} for f in features]
 
         batch = self.feature_extractor.pad(

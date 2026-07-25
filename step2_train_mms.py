@@ -29,8 +29,8 @@ from utils import (
     DataCollatorCTCWithPadding,
     compute_metrics,
     load_audio,
-    resolve_audio_path,
     print_gpu_info,
+    resolve_audio_path,
 )
 
 
