@@ -3,6 +3,7 @@
 Master Pipeline Runner for WAXAL ASR Challenge
 ==============================================
 Orchestrates the full workflow:
+  0. Download Data  →  download_data.py   (optional, needs internet)
   1. Preprocessing  →  step1_preprocessing.py
   2. MMS-1B Train   →  step2_train_mms.py
   3. KenLM Train    →  step3_train_kenlm.py
@@ -10,9 +11,13 @@ Orchestrates the full workflow:
   5. Ensemble        →  step5_ensemble.py
 
 Usage:
-  python run_pipeline.py --steps 1,2,3,4,5
+  # Full pipeline (run on Kaggle with internet):
+  python run_pipeline.py --steps 0,1,2,3,4,5
+
+  # Selective runs:
   python run_pipeline.py --steps 1,3        # preprocess + LM only
   python run_pipeline.py --steps 5          # ensemble only (requires trained models)
+  python run_pipeline.py --steps 0,1        # download data + preprocess
 """
 
 import argparse
@@ -20,6 +25,7 @@ import subprocess
 import sys
 
 STEPS: dict[int, tuple[str, str, list[int]]] = {
+    0: ("Data Download (HF)", "download_data.py", []),
     1: ("Preprocessing & CV", "step1_preprocessing.py", []),
     2: ("MMS-1B Fine-Tuning", "step2_train_mms.py", [1]),
     3: ("KenLM Language Model", "step3_train_kenlm.py", [1]),

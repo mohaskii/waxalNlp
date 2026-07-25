@@ -30,10 +30,21 @@ os.makedirs(KENLM_DIR, exist_ok=True)
 os.makedirs(SUBMISSION_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Hugging Face Hub (for pushing checkpoints)
+# Hugging Face Hub
 # ---------------------------------------------------------------------------
 HF_USERNAME = os.environ.get("HF_USERNAME", "your_username")
 HF_TOKEN = os.environ.get("HF_TOKEN", None)
+
+# WAXAL dataset on Hugging Face (for selective audio download)
+# Full dataset: 1.06 TB across 19 languages
+# We download only the 3 competition languages via streaming
+HF_DATASET_ID = "google/WaxalNLP"
+# Mapping: competition language code -> HF dataset config name
+LANG_TO_HF_CONFIG = {
+    "lin": "lin_asr",
+    "sna": "sna_asr",
+    "lug": "lug_asr",
+}
 
 # ---------------------------------------------------------------------------
 # Audio settings

@@ -25,7 +25,7 @@ Thumbs.db
 
 # Project output
 output/
-*.csv
+
 !requirements.txt
 
 # Data (raw audio, CSV datasets)
