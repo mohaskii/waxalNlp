@@ -310,7 +310,11 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
                     skipped_count += 1
                 else:
                     audio = example["audio"]
-                    sf.write(output_path, audio["array"], audio["sampling_rate"])
+                    # HF returns float32 [-1, 1] — save as int16 PCM (half the size)
+                    arr = audio["array"]
+                    if arr.dtype == np.float32 or arr.dtype == np.float64:
+                        arr = (arr * 32767).astype(np.int16)
+                    sf.write(output_path, arr, audio["sampling_rate"])
                     downloaded_count += 1
 
                 found_ids.add(rid)
