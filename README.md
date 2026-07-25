@@ -83,8 +83,56 @@ Create a read-only token at https://huggingface.co/settings/tokens. The dataset 
 ### 4. Kaggle GPU note
 
 Training requires a GPU. On Kaggle:
-- **Accelerator:** GPU A100 (free tier is fine)
+- **Accelerator:** GPU T4 x2 (or A100 if available)
 - **Internet:** ON (needed for dataset download + model weights)
+
+---
+
+## ⏱️ Quick Start: MMS-Only Submission (23h)
+
+**Best for:** Limited GPU time (~23 hours/week), first submission on the leaderboard.
+
+### Session plan
+
+| Session | What | Command | Time |
+|---|---|---|---|
+| 1 | Download + preprocess + KenLM + tune | `download_data.py --download` then `step1_preprocessing.py` then `step3_train_kenlm.py` then `step3_decode_lm.py --mode tune --fold 0` | ~1h |
+| 2 | Train MMS fold 0 | `step2_train_mms.py --fold 0` | ~4.5h |
+| 3 | Train MMS fold 1 | `step2_train_mms.py --fold 1` | ~4.5h |
+| 4 | Train MMS fold 2 | `step2_train_mms.py --fold 2` | ~4.5h |
+| 5 | Train MMS fold 3 | `step2_train_mms.py --fold 3` | ~4.5h |
+| 6 | Decode + submit | `step5_ensemble.py --single_model mms --mms_model_dir output/checkpoints/mms_fold_0 --alpha X --beta Y` | ~30m |
+
+**Total: ~19.5h** (3.5h buffer for variance).
+
+### What this gives you
+
+- 4 trained MMS-1B LoRA adapters (fold 0–3), each auto-pushed to HF Hub for safety
+- One fold decoded with KenLM + tuned α/β → submission CSV
+- No w2v-BERT training (saves 20h of GPU time)
+- No multi-fold ensemble (easily added later if time permits)
+
+### Key config changes for this plan
+
+```python
+# In config.py:
+num_train_epochs: int = 5   # was 10 — saves 5h per fold
+push_to_hub: bool = True    # auto-save each fold to HF Hub
+```
+
+### Adding ensemble later (if time permits)
+
+```bash
+# Train remaining fold:
+python step2_train_mms.py --fold 4
+
+# Ensemble all 5 folds (requires modifying step5 to average across folds):
+python step5_ensemble.py --single_model mms \
+  --mms_model_dir output/checkpoints/mms_fold_0 \
+  --alpha X --beta Y
+```
+
+> **Why 5 epochs?** LoRA converges fast. 5 epochs × 4 folds = better ensemble diversity than 10 epochs × 2 folds. More folds > more epochs for this competition's unseen-speaker test set.
 
 ---
 

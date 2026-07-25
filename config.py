@@ -81,7 +81,7 @@ class MMSConfig:
     learning_rate: float = 3e-4
     weight_decay: float = 0.01
     warmup_steps: int = 500
-    num_train_epochs: int = 10
+    num_train_epochs: int = 5
     fp16: bool = True
     # SpecAugment
     specaug_freq_mask: int = 27

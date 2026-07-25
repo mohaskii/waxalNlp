@@ -186,9 +186,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Ensemble Inference & Submission")
-    parser.add_argument("--mms_model_dir", type=str, required=True,
+    parser.add_argument("--mms_model_dir", type=str, default=None,
                         help="Path to MMS-1B checkpoint (with lora_adapter/)")
-    parser.add_argument("--w2v_model_dir", type=str, required=True,
+    parser.add_argument("--w2v_model_dir", type=str, default=None,
                         help="Path to w2v-BERT 2.0 checkpoint (with lora_adapter/)")
     parser.add_argument("--kenlm_path", type=str,
                         default=os.path.join(config.KENLM_DIR, "lm_5gram.binary"))

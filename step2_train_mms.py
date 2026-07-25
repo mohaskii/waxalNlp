@@ -247,7 +247,7 @@ def train_single_fold(fold: int, train_df: pd.DataFrame, cfg: config.MMSConfig):
             print(f"Pushing adapter to HF Hub: {hub_repo} ...")
             model.push_to_hub(hub_repo, token=config.HF_TOKEN)
             print(f"✅ Pushed to https://huggingface.co/{hub_repo}")
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             print(f"⚠️  HF Hub push failed: {e}")
             print(f"   Adapter saved locally at {adapter_path} — push manually later.")
 
