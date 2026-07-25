@@ -6,8 +6,6 @@ All paths, hyperparameters, and model settings live here.
 import os
 from dataclasses import dataclass, field
 
-os.environ["HF_TOKEN"] = "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"
-
 # Detect Kaggle — /tmp doesn't count toward 20 GB output limit
 _IS_KAGGLE = "KAGGLE_DATA_PROXY_TOKEN" in os.environ
 _DEFAULT_DATA = "/tmp/data" if _IS_KAGGLE else "./data"
