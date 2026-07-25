@@ -29,7 +29,7 @@ output/
 !requirements.txt
 
 # Data (raw audio, CSV datasets)
-data/
+
 *.wav
 *.mp3
 *.flac
