@@ -7,6 +7,7 @@ Step 1: Data Preprocessing & Validation Strategy
 - Save processed artifacts for downstream steps
 """
 
+import csv
 import json
 import os
 
@@ -18,12 +19,57 @@ from utils import build_vocab, normalize_text
 
 
 def load_data():
-    """Load Train.csv and Test.csv. Return dataframes."""
-    train_df = pd.read_csv(config.TRAIN_CSV)
-    test_df = pd.read_csv(config.TEST_CSV)
+    """Load Train.csv and Test.csv. Return dataframes.
+
+    Uses csv.DictReader to safely handle commas & quotes inside transcriptions
+    that trip up pd.read_csv's C engine.
+
+    Loads speaker_map.json (saved by download_data.py) for the Speaker_ID
+    column needed by GroupKFold.
+    """
+    # --- Load speaker map (id -> speaker_id) from download step ---
+    speaker_map: dict[str, str] = {}
+    speaker_path = os.path.join(config.DATA_DIR, "speaker_map.json")
+    if os.path.exists(speaker_path):
+        with open(speaker_path, "r") as f:
+            speaker_map = json.load(f)
+        print(f"Loaded {len(speaker_map)} speaker IDs from {speaker_path}")
+    else:
+        print(f"WARNING: {speaker_path} not found - using language prefix as fallback.")
+        print("GroupKFold will group by language, not by speaker.")
+
+    # --- Train.csv ---
+    train_rows = []
+    with open(config.TRAIN_CSV, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rid = row.get("id", "").strip()
+            if not rid:
+                continue  # skip malformed rows
+            train_rows.append({
+                "Audio_ID": rid,
+                "Speaker_ID": speaker_map.get(rid, rid.split("_", 1)[0]),
+                "Transcript": row.get("transcription", ""),
+                "Language": row.get("language", "").strip(),
+                "original_split": row.get("original_split", "").strip(),
+            })
+    train_df = pd.DataFrame(train_rows)
+
+    # --- Test.csv ---
+    test_rows = []
+    test_path = config.TEST_CSV
+    if os.path.exists(test_path):
+        with open(test_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                rid = row.get("ID", "").strip()
+                if rid:
+                    test_rows.append({"Audio_ID": rid})
+    test_df = pd.DataFrame(test_rows)
+
     print(f"Train samples: {len(train_df)}")
     print(f"Test samples:  {len(test_df)}")
-    print(f"Languages:     {train_df['Language'].unique().tolist()}")
+    print(f"Languages:     {sorted(train_df['Language'].unique())}")
     return train_df, test_df
 
 

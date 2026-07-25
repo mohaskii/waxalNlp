@@ -31,6 +31,7 @@ Notes:
 
 import argparse
 import csv
+import json
 import os
 import sys
 
@@ -252,6 +253,7 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
 
     downloaded_count = 0
     skipped_count = 0
+    speaker_map: dict[str, str] = {}  # audio_id → speaker_id for GroupKFold
 
     # Map HF split → local output subdirectory
     HF_SPLIT_TO_OUTPUT = {
@@ -304,18 +306,32 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
                 if rid is None or rid not in relevant_ids:
                     continue
 
-                output_path = os.path.join(output_dir, f"{rid}.wav")
+                output_path = os.path.join(output_dir, f"{rid}.flac")
 
                 if os.path.exists(output_path):
                     skipped_count += 1
                 else:
                     audio = example["audio"]
-                    # HF returns float32 [-1, 1] — save as int16 PCM (half the size)
                     arr = audio["array"]
+                    sr = audio["sampling_rate"]
+
+                    # Truncate to MAX_AUDIO_LENGTH — no point storing 60s clips
+                    max_samples = int(config.MAX_AUDIO_LENGTH * sr)
+                    if len(arr) > max_samples:
+                        arr = arr[:max_samples]
+
+                    # Pseudo‑int16 for FLAC compression (librosa converts back on load)
                     if arr.dtype == np.float32 or arr.dtype == np.float64:
                         arr = (arr * 32767).astype(np.int16)
-                    sf.write(output_path, arr, audio["sampling_rate"])
+
+                    # FLAC lossless — ~50‑60 % smaller than PCM WAV
+                    sf.write(output_path, arr, sr, format="FLAC")
                     downloaded_count += 1
+
+                    # Collect speaker ID for GroupKFold
+                    speaker_id = example.get("speaker_id", "")
+                    if speaker_id:
+                        speaker_map[rid] = speaker_id
 
                 found_ids.add(rid)
                 pbar.update(1)
@@ -342,10 +358,17 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
     print(f"  Downloaded: {downloaded_count} new files")
     print(f"  Skipped (already exist): {skipped_count} files")
 
+    # Save speaker metadata for GroupKFold (step 1 needs it)
+    if speaker_map:
+        speaker_path = os.path.join(audio_dir, "speaker_map.json")
+        with open(speaker_path, "w") as f:
+            json.dump(speaker_map, f)
+        print(f"  Speaker map saved: {speaker_path} ({len(speaker_map)} entries)")
+
     for subdir in ["Train", "Test"]:
         dir_path = os.path.join(audio_dir, subdir)
         if os.path.exists(dir_path):
-            n_files = len([f for f in os.listdir(dir_path) if f.endswith(".wav")])
+            n_files = len([f for f in os.listdir(dir_path) if f.endswith((".wav", ".flac"))])
             print(f"  {subdir}/: {n_files} audio files")
     print(f"{'=' * 60}\n")
 
