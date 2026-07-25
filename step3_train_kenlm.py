@@ -30,9 +30,9 @@ def prepare_corpus() -> str:
     """
     corpus_path = os.path.join(config.KENLM_DIR, "lm_corpus.txt")
 
-    # Load normalized training transcripts
+    # Load normalized training transcripts    # drop NaN (empty rows) + ensure strings
     train_df = pd.read_csv(os.path.join(config.OUTPUT_DIR, "train_folds.csv"))
-    lines = train_df["Transcript_normalized"].tolist()
+    lines = [str(t) for t in train_df["Transcript_normalized"].dropna().tolist()]
 
     # Optional: add external text (Wikipedia, Leipzig dumps)
     external_dir = os.path.join(config.DATA_DIR, "external_text")
@@ -51,6 +51,9 @@ def prepare_corpus() -> str:
     # Write corpus
     with open(corpus_path, "w", encoding="utf-8") as f:
         for line in lines:
+            # pandas NaN becomes float; skip empty/NaN rows
+            if not isinstance(line, str) or not line.strip():
+                continue
             _ = f.write(line + "\n")
 
     print(f"LM corpus: {len(lines)} lines -> {corpus_path}")

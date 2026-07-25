@@ -94,16 +94,62 @@ Training requires a GPU. On Kaggle:
 
 ### Session plan
 
-| Session | What | Command | Time |
-|---|---|---|---|
-| 1 | Download + preprocess + KenLM + tune | `download_data.py --download` then `step1_preprocessing.py` then `step3_train_kenlm.py` then `step3_decode_lm.py --mode tune --fold 0` | ~1h |
-| 2 | Train MMS fold 0 | `step2_train_mms.py --fold 0` | ~4.5h |
-| 3 | Train MMS fold 1 | `step2_train_mms.py --fold 1` | ~4.5h |
-| 4 | Train MMS fold 2 | `step2_train_mms.py --fold 2` | ~4.5h |
-| 5 | Train MMS fold 3 | `step2_train_mms.py --fold 3` | ~4.5h |
-| 6 | Decode + submit | `step5_ensemble.py --single_model mms --mms_model_dir output/checkpoints/mms_fold_0 --alpha X --beta Y` | ~30m |
+**Session 1** (~1h) — Data + Preprocess + KenLM:
+```bash
+# Download audio (~40 min)
+python download_data.py --download
 
-**Total: ~19.5h** (3.5h buffer for variance).
+# Preprocess (~1 min)
+python step1_preprocessing.py
+
+# Train KenLM language model (~5 min)
+python step3_train_kenlm.py
+
+# Tune alpha/beta on fold 0 (~15 min)
+python step3_decode_lm.py --mode tune --fold 0
+# -> saves best (alpha, beta) to output/kenlm/tune_results.json
+```
+
+**Session 2** (~5h) — Train fold 0 + Submit:
+```bash
+# Train (~4.5h)
+python step2_train_mms.py --fold 0
+
+# Decode + submit (~30m) — X,Y from tune_results.json
+python step5_ensemble.py \
+  --single_model mms \
+  --mms_model_dir output/checkpoints/mms_fold_0 \
+  --alpha X --beta Y
+# -> upload output/submissions/ensemble_final.csv to Zindi 🎉
+```
+
+**Session 3** (~5h) — Train fold 1 + Submit:
+```bash
+python step2_train_mms.py --fold 1
+python step5_ensemble.py \
+  --single_model mms \
+  --mms_model_dir output/checkpoints/mms_fold_1 \
+  --alpha X --beta Y
+# -> at worst same score, usually better (different train/val split)
+```
+
+**Session 4** (~5h) — Train fold 2 + Submit:
+```bash
+python step2_train_mms.py --fold 2
+python step5_ensemble.py --single_model mms \
+  --mms_model_dir output/checkpoints/mms_fold_2 --alpha X --beta Y
+```
+
+**Session 5** (~5h) — Train fold 3 + Submit:
+```bash
+python step2_train_mms.py --fold 3
+python step5_ensemble.py --single_model mms \
+  --mms_model_dir output/checkpoints/mms_fold_3 --alpha X --beta Y
+```
+
+**Why this order:** Each session = 1 fold + 1 submission. You always have
+something on the leaderboard. If time runs out mid-way, you keep your best
+score from earlier sessions. Submit all 4 — Zindi shows you which fold wins.
 
 ### What this gives you
 
