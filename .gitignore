@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments / pyenv
+.venv/
+venv/
+env/
+.python-version
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Project output
+output/
+*.csv
+!requirements.txt
+
+# Data (raw audio, CSV datasets)
+data/
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model checkpoints (large binaries)
+*.pt
+*.bin
+*.safetensors
+*.arpa
+*.binary
+
+# Logs
+*.log
+
+# Environment
+.env
