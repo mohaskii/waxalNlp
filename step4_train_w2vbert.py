@@ -185,7 +185,7 @@ def train_single_fold(fold: int, train_df: pd.DataFrame, cfg: config.W2VBertConf
         load_best_model_at_end=True,
         metric_for_best_model="combined",
         greater_is_better=False,
-        push_to_hub=cfg.push_to_hub,
+        push_to_hub=False,  # we push manually after training (final adapter only)
         hub_model_id=f"{config.HF_USERNAME}/{cfg.hub_model_id}-fold{fold}",
         report_to="none",
         dataloader_num_workers=2,
@@ -217,6 +217,17 @@ def train_single_fold(fold: int, train_df: pd.DataFrame, cfg: config.W2VBertConf
     adapter_path = os.path.join(output_dir, "lora_adapter")
     model.save_pretrained(adapter_path)
     print(f"LoRA adapter saved to {adapter_path}")
+
+    # Push final adapter to HF Hub (safety — session may time out)
+    if cfg.push_to_hub:
+        try:
+            hub_repo = f"{config.HF_USERNAME}/{cfg.hub_model_id}-fold{fold}"
+            print(f"Pushing adapter to HF Hub: {hub_repo} ...")
+            model.push_to_hub(hub_repo, token=config.HF_TOKEN)
+            print(f"✅ Pushed to https://huggingface.co/{hub_repo}")
+        except Exception as e:
+            print(f"⚠️  HF Hub push failed: {e}")
+            print(f"   Adapter saved locally at {adapter_path} — push manually later.")
 
     del model, trainer, datasets
     gc.collect()
