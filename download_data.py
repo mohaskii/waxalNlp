@@ -27,10 +27,10 @@ import csv
 import os
 import sys
 
-from datasets import load_dataset, Audio
-from tqdm import tqdm
-import soundfile as sf
 import numpy as np
+import soundfile as sf
+from datasets import Audio, load_dataset
+from tqdm import tqdm
 
 import config
 
@@ -41,8 +41,8 @@ DATASET_ID = config.HF_DATASET_ID
 LANG_TO_CONFIG = config.LANG_TO_HF_CONFIG
 
 HF_SPLITS = {
-    "train": ["train", "validation"],   # these go to data/Train/
-    "test": ["test"],                    # these go to data/Test/
+    "train": ["train", "validation"],  # these go to data/Train/
+    "test": ["test"],  # these go to data/Test/
 }
 
 # Competition CSV columns
@@ -93,8 +93,10 @@ def _read_competition_ids(data_dir: str) -> dict[str, set[str]]:
         print(f"WARNING: {len(overlap)} IDs appear in both Train and Test CSVs!")
 
     total = len(required["Train"]) + len(required["Test"])
-    print(f"Required audio files: {len(required['Train'])} train + "
-          f"{len(required['Test'])} test = {total} total")
+    print(
+        f"Required audio files: {len(required['Train'])} train + "
+        f"{len(required['Test'])} test = {total} total"
+    )
     return required
 
 
@@ -115,7 +117,7 @@ def _guess_competition_id(example: dict, lang_code: str) -> str | None:
             # The HF value might already be the full ID, or just the number part
             sval = str(val).strip()
             if sval.startswith(f"{lang_code}_"):
-                return sval   # already has prefix: "lug_96123"
+                return sval  # already has prefix: "lug_96123"
             if sval.isdigit():
                 return f"{lang_code}_{sval}"  # just number: "96123"
             # Might be something else — return as-is
@@ -144,14 +146,14 @@ def probe():
     lang = "lin"
     config_name = LANG_TO_CONFIG[lang]
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Probing: {DATASET_ID} / {config_name} (split: train)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     ds = load_dataset(DATASET_ID, name=config_name, split="train", streaming=True)
     sample = next(iter(ds))
 
-    print(f"\n📋 Sample keys and types:")
+    print("\n📋 Sample keys and types:")
     for k, v in sample.items():
         if isinstance(v, dict):
             print(f"  • {k}: dict with keys {list(v.keys())}")
@@ -172,8 +174,8 @@ def probe():
         print(f"    Raw value:      {raw_id}")
         print(f"    Competition ID: {guessed}")
 
-    print(f"\n💡 Check if this ID format matches your Train.csv / Test.csv IDs.")
-    print(f"   If the guessed ID doesn't match, the script won't download correctly.\n")
+    print("\n💡 Check if this ID format matches your Train.csv / Test.csv IDs.")
+    print("   If the guessed ID doesn't match, the script won't download correctly.\n")
 
 
 # ---------------------------------------------------------------------------
@@ -230,12 +232,14 @@ def download(target_dir: str = "./data", lang: str | None = None):
                 if target_subdir == "Train":
                     # For training: keep all IDs from this language
                     ids_to_find = {
-                        rid for rid in required["Train"]
+                        rid
+                        for rid in required["Train"]
                         if rid.startswith(f"{lang_code}_")
                     }
                 else:
                     ids_to_find = {
-                        rid for rid in required["Test"]
+                        rid
+                        for rid in required["Test"]
                         if rid.startswith(f"{lang_code}_")
                     }
 
@@ -286,11 +290,13 @@ def download(target_dir: str = "./data", lang: str | None = None):
                         f"Missing: {relevant_count - found_in_split}"
                     )
                 else:
-                    print(f"  ✅ All {relevant_count} files for {lang_code}/{hf_split} found.")
+                    print(
+                        f"  ✅ All {relevant_count} files for {lang_code}/{hf_split} found."
+                    )
 
     # 4. Summary
-    print(f"\n{'='*60}")
-    print(f"Download complete!")
+    print(f"\n{'=' * 60}")
+    print("Download complete!")
     print(f"  Downloaded: {downloaded_count} new files")
     print(f"  Skipped (already exist): {skipped_count} files")
 
@@ -300,7 +306,7 @@ def download(target_dir: str = "./data", lang: str | None = None):
         if os.path.exists(dir_path):
             n_files = len([f for f in os.listdir(dir_path) if f.endswith(".wav")])
             print(f"  {subdir}/: {n_files} audio files")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 # ---------------------------------------------------------------------------
