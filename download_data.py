@@ -30,6 +30,7 @@ import sys
 import numpy as np
 import soundfile as sf
 from datasets import Audio, load_dataset
+from huggingface_hub import login
 from tqdm import tqdm
 
 import config
@@ -143,8 +144,21 @@ def _resolve_id_field(example: dict) -> str:
 # ---------------------------------------------------------------------------
 # Probe
 # ---------------------------------------------------------------------------
+def _authenticate():
+    """Log in to Hugging Face Hub with the configured token (if available).
+    This overrides any stale cached token (e.g. 'lolo') on Kaggle.
+    """
+    token = config.HF_TOKEN or os.environ.get("HF_TOKEN")
+    if token:
+        login(token=token, add_to_git_credential=False)
+        print(f"✅ Authenticated with Hugging Face Hub")
+    else:
+        print("⚠️  No HF_TOKEN set — downloads may be rate-limited.")
+
+
 def probe():
     """Inspect the HF dataset structure for one language."""
+    _authenticate()
     lang = "lin"
     config_name = LANG_TO_CONFIG[lang]
 
@@ -191,6 +205,8 @@ def download(target_dir: str = "./data", lang: str | None = None):
     dataset splits in streaming mode, match against the required IDs
     from the competition CSVs, and save matching audio as WAV files.
     """
+    _authenticate()
+
     # 1. Read required IDs from competition CSVs
     required = _read_competition_ids(target_dir)
     total_required = len(required["Train"]) + len(required["Test"])
@@ -206,7 +222,7 @@ def download(target_dir: str = "./data", lang: str | None = None):
     downloaded_count = 0
     skipped_count = 0
 
-    hf_token = os.environ.get("HF_TOKEN", None)
+    hf_token = config.HF_TOKEN or os.environ.get("HF_TOKEN", None)
 
     for lang_code in langs:
         config_name = LANG_TO_CONFIG[lang_code]
