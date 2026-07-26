@@ -104,10 +104,12 @@ def prepare_dataset_for_fold(
     ds_val = _make_hf_dataset(train_df.loc[val_mask])
 
     ds_train = ds_train.map(
-        _preprocess, batched=True, remove_columns=["audio_path", "transcript"]
+        _preprocess, batched=True, batch_size=32,
+        remove_columns=["audio_path", "transcript"],
     )
     ds_val = ds_val.map(
-        _preprocess, batched=True, remove_columns=["audio_path", "transcript"]
+        _preprocess, batched=True, batch_size=32,
+        remove_columns=["audio_path", "transcript"],
     )
 
     return (
