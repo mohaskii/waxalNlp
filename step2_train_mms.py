@@ -61,10 +61,14 @@ def prepare_dataset_for_fold(
             except FileNotFoundError:
                 print(f"WARNING: {audio_path} not found, skipping")
                 continue
+            # Handle NaN transcripts (empty rows)
+            transcript = row["Transcript_normalized"]
+            if not isinstance(transcript, str):
+                transcript = str(transcript) if pd.notna(transcript) else ""
             records.append(
                 {
                     "audio_path": audio_path,
-                    "transcript": row["Transcript_normalized"],
+                    "transcript": transcript,
                 }
             )
         return Dataset.from_list(records)
