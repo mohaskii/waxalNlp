@@ -33,8 +33,8 @@ def _ensure_kenlm_binaries():
     print("Building kenlm binaries from source (one-time, ~2 min)...")
     subprocess.run(
         "apt-get update -qq && "
-        "apt-get install -y -qq cmake build-essential libboost-program-options-dev "
-        "libeigen3-dev && "
+        "apt-get install -y -qq cmake build-essential libeigen3-dev "
+        "libboost-all-dev && "
         "cd /tmp && rm -rf kenlm && git clone --depth 1 https://github.com/kpu/kenlm.git && "
         "cd kenlm && mkdir -p build && cd build && "
         "cmake .. -DKENLM_MAX_ORDER=8 && make -j$(nproc) && "
