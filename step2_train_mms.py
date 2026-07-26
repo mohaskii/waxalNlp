@@ -11,6 +11,8 @@ Step 2: Fine-Tune Meta MMS-1B with LoRA
 import argparse
 import gc
 import os
+import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
@@ -116,6 +118,15 @@ def prepare_dataset_for_fold(
 # ---------------------------------------------------------------------------
 def apply_lora(model, cfg: config.MMSConfig):
     """Wrap a Wav2Vec2ForCTC model with LoRA adapters."""
+    # Kaggle ships torchao 0.10 but peft needs 0.16+
+    try:
+        import torchao
+        from packaging.version import parse as _v
+        if _v(torchao.__version__) < _v("0.16.0"):
+            raise ImportError
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "torchao>=0.16.0"])
+
     lora_config = LoraConfig(
         task_type=TaskType.FEATURE_EXTRACTION,
         r=cfg.lora_r,
