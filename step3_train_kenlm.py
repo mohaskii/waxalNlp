@@ -9,6 +9,7 @@ Step 3: Build & Integrate KenLM Language Model
 import itertools
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -18,6 +19,36 @@ from pyctcdecode.decoder import build_ctcdecoder
 
 import config
 from utils import compute_metrics, load_audio, normalize_text
+
+
+def _ensure_kenlm_binaries():
+    """Build lmplz and build_binary from source if they don't exist.
+
+    pip install kenlm only gives Python bindings, not the CLI tools.
+    This builds the C++ binaries (~2 min on Kaggle).
+    """
+    if shutil.which("lmplz") and shutil.which("build_binary"):
+        return
+
+    print("Building kenlm binaries from source (one-time, ~2 min)...")
+    subprocess.run(
+        "cd /tmp && git clone --depth 1 https://github.com/kpu/kenlm.git && "
+        "cd kenlm && mkdir -p build && cd build && "
+        "cmake .. -DKENLM_MAX_ORDER=8 && make -j$(nproc) && "
+        "cp bin/lmplz bin/build_binary /usr/local/bin/",
+        shell=True, check=True,
+    )
+
+    if not shutil.which("lmplz"):
+        raise RuntimeError(
+            "lmplz build failed. Run manually:\n"
+            "  apt-get install -y cmake build-essential libboost-all-dev\n"
+            "  cd /tmp && git clone --depth 1 https://github.com/kpu/kenlm.git\n"
+            "  cd /tmp/kenlm && mkdir -p build && cd build\n"
+            "  cmake .. -DKENLM_MAX_ORDER=8 && make -j$(nproc)\n"
+            "  cp bin/lmplz bin/build_binary /usr/local/bin/"
+        )
+    print("kenlm binaries ready.")
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +91,35 @@ def prepare_corpus() -> str:
     return corpus_path
 
 
+def _find_binary(name: str) -> str:
+    """Find a kenlm binary (lmplz or build_binary).
+
+    Tries: PATH, common install locations, and Python bin directory.
+    Raises FileNotFoundError if not found.
+    """
+    # 1. Check PATH
+    path = shutil.which(name)
+    if path:
+        return path
+
+    # 2. Check alongside the Python executable (pip --user installs)
+    python_bin = os.path.dirname(sys.executable)
+    path = os.path.join(python_bin, name)
+    if os.path.isfile(path):
+        return path
+
+    # 3. Check /usr/local/bin (common on Kaggle/Linux)
+    path = os.path.join("/usr/local/bin", name)
+    if os.path.isfile(path):
+        return path
+
+    raise FileNotFoundError(
+        f"{name} not found. Install kenlm with binaries:\n"
+        f"  apt-get install -y -qq cmake build-essential libboost-all-dev && "
+        f"pip install https://github.com/kpu/kenlm/archive/master.zip"
+    )
+
+
 # ---------------------------------------------------------------------------
 # 2. Train KenLM
 # ---------------------------------------------------------------------------
@@ -73,9 +133,11 @@ def train_kenlm(corpus_path: str, cfg: config.KenLMConfig) -> str:
     binary_path = os.path.join(config.KENLM_DIR, "lm_5gram.binary")
 
     # Build ARPA model
+    lmplz = _find_binary("lmplz")
+    build_bin = _find_binary("build_binary")
     prune_str = " ".join(str(p) for p in cfg.prune_values)
     cmd = (
-        f"lmplz -o {cfg.ngram_order} "
+        f"{lmplz} -o {cfg.ngram_order} "
         f"-S 80% "
         f"--prune {prune_str} "
         f"< {corpus_path} > {arpa_path}"
@@ -87,7 +149,7 @@ def train_kenlm(corpus_path: str, cfg: config.KenLMConfig) -> str:
         sys.exit(1)
 
     # Build binary (faster loading)
-    cmd2 = f"build_binary {arpa_path} {binary_path}"
+    cmd2 = f"{build_bin} {arpa_path} {binary_path}"
     print(f"Running: {cmd2}")
     _ = subprocess.run(cmd2, shell=True, check=True)
 
@@ -204,6 +266,8 @@ def main():
     print("=" * 60)
     print("STEP 3: KenLM Language Model")
     print("=" * 60)
+
+    _ensure_kenlm_binaries()  # build lmplz/build_binary if missing
 
     kenlm_cfg = config.KenLMConfig()
     beam_cfg = config.BeamSearchConfig()
