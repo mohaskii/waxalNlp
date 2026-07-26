@@ -358,7 +358,7 @@ def download(audio_dir: str = config.DATA_DIR, csv_dir: str = "./data", lang: st
     print(f"  Downloaded: {downloaded_count} new files")
     print(f"  Skipped (already exist): {skipped_count} files")
 
-    ²# Save speaker metadata for GroupKFold (step 1 needs it)
+    # Save speaker metadata for GroupKFold (step 1 needs it)
     # Merge with existing map — /tmp is wiped between sessions, but within
     # a session we may run --lang multiple times and want all entries.
     speaker_path = os.path.join(audio_dir, "speaker_map.json")
